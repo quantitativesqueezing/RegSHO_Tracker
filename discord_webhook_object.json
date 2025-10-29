@@ -1,0 +1,53 @@
+{
+  "username": "FloridaManFinance",
+  "avatar_url": "https://pbs.twimg.com/profile_images/1459845340996190212/bDPUvUBZ_400x400.jpg",
+  "content": "",
+  "embeds": [
+    {
+      "author": {
+        "name": "FloridaManFinance",
+        "url": "https://x.com/FloridaManFin",
+        "icon_url": "https://pbs.twimg.com/profile_images/1459845340996190212/bDPUvUBZ_400x400.jpg"
+      },
+      "title": "NASDAQ RegSHO List ({latest_date})",
+      "url": "https://www.nasdaqtrader.com/trader.aspx?id=RegSHOThreshold",
+      "description": "{nasdaq.current}",
+      "color": 1210347,
+      "fields": [
+        {
+          "name": "Added",
+          "value": "{nasdaq.added}",
+          "inline": true
+        },
+        {
+          "name": "Removed",
+          "value": "{nasdaq.removed}",
+          "inline": true
+        }
+      ]
+    },
+    {
+      "author": {
+        "name": "FloridaManFinance",
+        "url": "https://x.com/FloridaManFin",
+        "icon_url": "https://pbs.twimg.com/profile_images/1459845340996190212/bDPUvUBZ_400x400.jpg"
+      },
+      "title": "NYSE RegSHO List ({latest_date})",
+      "url": "https://www.nyse.com/regulation/regulation-sho",
+      "description": "{nyse.current}",
+      "color": 1210347,
+      "fields": [
+        {
+          "name": "Added",
+          "value": "{nyse.added}",
+          "inline": true
+        },
+        {
+          "name": "Removed",
+          "value": "{nyse.removed}",
+          "inline": true
+        }
+      ]
+    }
+  ]
+}

@@ -1,2 +1,6 @@
+# Environment files
 .env
 .DS_Store
+
+# Log files
+webhook_post_log.json

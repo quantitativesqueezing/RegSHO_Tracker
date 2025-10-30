@@ -286,7 +286,7 @@ def format_human_date(date: _dt.date) -> str:
 
 def format_display_date(date: _dt.date) -> str:
     """Return dates in display format with a trailing parenthesis."""
-    return f"{format_human_date(date)})"
+    return format_human_date(date)
 
 
 def format_symbols_for_embed(symbols: Iterable[str]) -> str:
@@ -309,6 +309,7 @@ def load_post_log(path: Path) -> Dict[str, str]:
 
 def save_post_log(path: Path, data: Dict[str, str]) -> None:
     try:
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     except OSError as exc:
         raise RuntimeError(f"Failed to write webhook post log {path}: {exc}") from exc
@@ -605,7 +606,17 @@ def main(argv: List[str] | None = None) -> None:
             template_path = Path(__file__).with_name("discord_webhook_object.json")
         if not template_path.exists():
             raise RuntimeError(f"Discord webhook template not found: {template_path}")
-        post_log_path = Path(__file__).with_name("webhook_post_log.json")
+        post_log_path = (
+            Path.home()
+            / "Library"
+            / "Mobile Documents"
+            / "com~apple~CloudDocs"
+            / "Development"
+            / "Projects"
+            / "RegSHO_Tracker"
+            / "Logs"
+            / "webhook_post_log.json"
+        )
         post_log = load_post_log(post_log_path)
         post_log_updated = False
         today_log_token = now_eastern.isoformat()
@@ -643,12 +654,14 @@ def main(argv: List[str] | None = None) -> None:
     display_latest_date = next_trading_day(latest_date)
     display_previous_date = next_trading_day(previous_date)
 
-    human_latest = format_display_date(display_latest_date)
-    human_previous = format_display_date(display_previous_date)
+    display_latest_str = format_display_date(display_latest_date)
+    display_previous_str = format_display_date(display_previous_date)
+    payload_latest_str = f"{display_latest_str})"
+    payload_previous_str = f"{display_previous_str})"
 
     payload = {
-        "latest_date": human_latest,
-        "previous_date": human_previous,
+        "latest_date": payload_latest_str,
+        "previous_date": payload_previous_str,
         "nasdaq": {
             "current": as_sorted_list(nasdaq_current),
             "added": as_sorted_list(nasdaq_diff["added"]),
@@ -667,8 +680,8 @@ def main(argv: List[str] | None = None) -> None:
     }
 
     replacements = {
-        "{previous_date}": human_previous,
-        "{latest_date}": human_latest,
+        "{previous_date}": display_previous_str,
+        "{latest_date}": display_latest_str,
         "{nasdaq.current}": format_symbols_for_embed(payload["nasdaq"]["current"]),
         "{nasdaq.added}": format_symbols_for_embed(payload["nasdaq"]["added"]),
         "{nasdaq.removed}": format_symbols_for_embed(payload["nasdaq"]["removed"]),
@@ -721,7 +734,7 @@ def main(argv: List[str] | None = None) -> None:
         return
 
     # Report results
-    print(f"RegSHO Threshold List Comparison for {human_latest} vs {human_previous}\n")
+    print(f"RegSHO Threshold List Comparison for {payload_latest_str} vs {payload_previous_str}\n")
 
     def format_symbol_list(symbols: Iterable[str]) -> str:
         """Return a comma‑separated string of sorted symbols or 'None' if empty."""

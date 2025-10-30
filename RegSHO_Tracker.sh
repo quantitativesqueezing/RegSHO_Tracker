@@ -10,3 +10,9 @@ source ./venv/bin/activate
 
 # Run the script + send Webhook Object to Discord
 python3 RegSHO_Tracker.py --post-combined
+
+
+
+
+# *** Run the launchctl job manually ***
+###launchctl kickstart -k gui/$(id -u)/com.you.RegSHO_Tracker

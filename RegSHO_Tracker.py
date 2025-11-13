@@ -44,6 +44,8 @@ except ImportError:
 import requests
 
 
+LOG_APP_ID = "RegSHO_Tracker"
+
 NASDAQ_URL_TEMPLATE = (
     "https://www.nasdaqtrader.com/dynamic/symdir/regsho/nasdaqth{date}.txt"
 )
@@ -536,6 +538,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Emit the comparison report as JSON.",
     )
     parser.add_argument(
+        "--test",
+        action="store_true",
+        dest="use_test_webhooks",
+        help="Use DISCORD_WEBHOOK_TEST_URL webhooks instead of production webhooks.",
+    )
+    parser.add_argument(
         "--post-combined",
         action="store_true",
         dest="post_combined",
@@ -570,8 +578,12 @@ def main(argv: List[str] | None = None) -> None:
             except ValueError as exc:
                 raise RuntimeError(f"Invalid --webhook-url value: {exc}") from exc
         else:
-            array_keys = ("DISCORD_WEBHOOK_URL", "DISCORD_WEBHOOK_TEST")
-            for key in array_keys:
+            primary_env_keys = (
+                ("DISCORD_WEBHOOK_TEST_URL",)
+                if args.use_test_webhooks
+                else ("DISCORD_WEBHOOK_URL",)
+            )
+            for key in primary_env_keys:
                 raw = os.getenv(key)
                 if not raw:
                     continue
@@ -581,7 +593,7 @@ def main(argv: List[str] | None = None) -> None:
                     raise RuntimeError(
                         f"Environment variable {key} must be a JSON array of webhook URLs: {exc}"
                     ) from exc
-            if not webhook_targets:
+            if not webhook_targets and not args.use_test_webhooks:
                 legacy_keys = (
                     "DISCORD_WEBHOOK_URLS",
                     "DISCORD_WEBHOOK_URL",
@@ -707,9 +719,19 @@ def main(argv: List[str] | None = None) -> None:
             ) from exc
         webhook_payload = apply_template_replacements(template_json, replacements)
         for target in webhook_targets:
-            log_key = f"{target.url}|{target.thread_id or ''}"
-            if post_log.get(log_key) == today_log_token:
+            log_key = f"{LOG_APP_ID}|{target.url}|{target.thread_id or ''}"
+            legacy_key = f"{target.url}|{target.thread_id or ''}"
+            legacy_used = False
+            existing_token = post_log.get(log_key)
+            if existing_token is None and legacy_key in post_log:
+                existing_token = post_log[legacy_key]
+                legacy_used = True
+            if existing_token == today_log_token:
                 print(f"Skipping Discord webhook {target.url} (already posted today).")
+                if legacy_used:
+                    post_log[log_key] = existing_token
+                    del post_log[legacy_key]
+                    post_log_updated = True
                 continue
             params = {"thread_id": target.thread_id} if target.thread_id else None
             try:
@@ -726,6 +748,8 @@ def main(argv: List[str] | None = None) -> None:
                     f"Discord webhook {target.url} returned {response.status_code}: {response.text}"
                 )
             post_log[log_key] = today_log_token
+            if legacy_key in post_log:
+                del post_log[legacy_key]
             post_log_updated = True
         if post_log_updated:
             save_post_log(post_log_path, post_log)
